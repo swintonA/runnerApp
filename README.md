@@ -1,2 +1,2 @@
 # runnerApp
-App to track treadmill exercise
+App specifically to track treadmill exercise
