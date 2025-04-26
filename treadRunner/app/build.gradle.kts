@@ -59,4 +59,8 @@ dependencies {
     implementation("com.github.polarofficial:polar-ble-sdk:6.1.1")
     implementation("io.reactivex.rxjava3:rxjava:3.1.6")
     implementation("io.reactivex.rxjava3:rxandroid:3.0.2")
+    implementation("androidx.activity:activity-ktx:1.10.1")
+    implementation("androidx.fragment:fragment-ktx:1.8.6")
+    implementation("androidx.fragment:fragment-compose:1.8.6")
+    implementation("androidx.appcompat:appcompat:1.1.0")
 }
