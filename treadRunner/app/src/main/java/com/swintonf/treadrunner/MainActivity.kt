@@ -150,6 +150,9 @@ class MainActivity : ComponentActivity() {
             var lineHeight = graphHeightEnd
             var timeText = 200
 
+            var textWidth = graphHeightStart.value
+            var timeSecText = 600
+
             screenWidth.value = canvasWidth * 1f
             screenHeight.value = canvasHeight * 1f
 
@@ -171,6 +174,12 @@ class MainActivity : ComponentActivity() {
             drawText(timeMeasuredText, topLeft = Offset(canvasWidth * graphWidthStart.value , canvasHeight * (graphHeightStart.value * 1.001f)))
 
 
+            for (i in 1..5) {
+                drawText(textMeasurer, "${timeSecText / 60}m", topLeft = Offset(canvasWidth * (textWidth - (textWidth * 0.03f)), canvasHeight * (graphHeightStart.value * 0.975f)))
+                textWidth = textWidth - (graphWidth.value / 5)
+                timeSecText = timeSecText - 120
+            }
+
             val HrMeasuredText =
                 textMeasurer.measure(
                     AnnotatedString("Heart Rate",
@@ -182,7 +191,7 @@ class MainActivity : ComponentActivity() {
 
             val hrBox = HrMeasuredText.size.height
 
-            rotate(degrees = -90F, pivot= Offset((canvasWidth * graphWidthStart.value) - hrBox , canvasHeight * graphHeightStart.value)) {
+            rotate(degrees = -90F, pivot = Offset((canvasWidth * graphWidthStart.value) - hrBox , canvasHeight * graphHeightStart.value)) {
                 drawRect(color = Color.Transparent, size = HrMeasuredText.size.toSize(), topLeft = Offset((canvasWidth * graphWidthStart.value) - hrBox , canvasHeight * graphHeightStart.value))
                 drawText(HrMeasuredText, topLeft = Offset((canvasWidth * graphWidthStart.value) - hrBox , canvasHeight * graphHeightStart.value))
             }
