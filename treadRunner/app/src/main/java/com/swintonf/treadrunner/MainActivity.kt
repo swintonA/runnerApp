@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
     val graphWidthStart = mutableStateOf(0f)
     val graphHeightStart = mutableStateOf(0f)
     val graphHeight = mutableStateOf(0f)
+    val graphWidth = mutableStateOf(0f)
 
     var pointStartWidth = 0f
     var pointStartHeight = 0f
@@ -77,7 +78,7 @@ class MainActivity : ComponentActivity() {
     var Heartr : Int by Delegates.observable(0) { prop, old, new ->
         HeartR.value = Heartr
         graphPoints.add(Offset(step,pointStartHeight + (Heartr * graphHeightStep)))
-        step=step+10f
+        step=step+((screenWidth.value * graphWidth.value) / 600)
     }
 
     val api: PolarBleApi by lazy { PolarBleApiDefaultImpl.defaultImplementation(applicationContext,
@@ -144,7 +145,7 @@ class MainActivity : ComponentActivity() {
             val graphWidthEnd = 0.05f
 
             graphHeight.value = graphHeightStart.value - graphHeightEnd
-            val graphWidth = graphHeightStart.value - graphWidthEnd
+            graphWidth.value = graphHeightStart.value - graphWidthEnd
 
             var lineHeight = graphHeightEnd
             var timeText = 200
@@ -162,7 +163,7 @@ class MainActivity : ComponentActivity() {
                     AnnotatedString("Time",
                         (ParagraphStyle(textAlign = TextAlign.Center))
                         ),
-                    constraints = Constraints.fixedWidth((canvasWidth * graphWidth).toInt()),
+                    constraints = Constraints.fixedWidth((canvasWidth * graphWidth.value).toInt()),
                 )
 
             drawRect(color = Color.Transparent, size = timeMeasuredText.size.toSize(),
@@ -191,7 +192,7 @@ class MainActivity : ComponentActivity() {
                     pointMode = PointMode.Polygon,
                     color = Color(0xFF7E0D3B),
                     strokeWidth = 10f,
-                    cap = StrokeCap.Square,
+                    cap = StrokeCap.Round,
                     points = graphPoints
                 )}
 
@@ -206,6 +207,7 @@ class MainActivity : ComponentActivity() {
                 lineHeight = lineHeight + (graphHeight.value / 5)
                 timeText = timeText - 40
             }
+
 
             drawLine(
                 brush = SolidColor(Color(0xFF5B5B5B)),
