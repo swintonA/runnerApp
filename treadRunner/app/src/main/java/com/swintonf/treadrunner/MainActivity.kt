@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -13,9 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -23,10 +19,9 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowDpSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -38,11 +33,14 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import com.polar.androidcommunications.api.ble.model.DisInfo
 import com.polar.sdk.api.PolarBleApi
@@ -148,10 +146,10 @@ class MainActivity : ComponentActivity() {
             graphWidth.value = graphHeightStart.value - graphWidthEnd
 
             var lineHeight = graphHeightEnd
-            var timeText = 200
 
-            var textWidth = graphHeightStart.value
-            var timeSecText = 600
+
+            var timeText = 200
+            val timeSecText = mutableIntStateOf(120)
 
             screenWidth.value = canvasWidth * 1f
             screenHeight.value = canvasHeight * 1f
@@ -164,36 +162,54 @@ class MainActivity : ComponentActivity() {
             val timeMeasuredText =
                 textMeasurer.measure(
                     AnnotatedString("Time",
-                        (ParagraphStyle(textAlign = TextAlign.Center))
+                        (ParagraphStyle(textAlign = TextAlign.Center)),
                         ),
-                    constraints = Constraints.fixedWidth((canvasWidth * graphWidth.value).toInt()),
+                    constraints = Constraints.fixedWidth((canvasWidth).toInt()),
+                    style = TextStyle(fontSize = 15.sp)
                 )
-
-            drawRect(color = Color.Transparent, size = timeMeasuredText.size.toSize(),
-                topLeft = Offset(canvasWidth * graphWidthStart.value , canvasHeight * (graphHeightStart.value * 1.001f)))
-            drawText(timeMeasuredText, topLeft = Offset(canvasWidth * graphWidthStart.value , canvasHeight * (graphHeightStart.value * 1.001f)))
-
-
-            for (i in 1..5) {
-                drawText(textMeasurer, "${timeSecText / 60}m", topLeft = Offset(canvasWidth * (textWidth - (textWidth * 0.03f)), canvasHeight * (graphHeightStart.value * 0.975f)))
-                textWidth = textWidth - (graphWidth.value / 5)
-                timeSecText = timeSecText - 120
-            }
 
             val HrMeasuredText =
                 textMeasurer.measure(
                     AnnotatedString("Heart Rate",
                         (ParagraphStyle(textAlign = TextAlign.Center))
                     ),
-                    constraints = Constraints.fixedWidth((canvasHeight * graphHeight.value).toInt()),
+                    constraints = Constraints.fixedWidth(((canvasHeight * 0.6)-timeMeasuredText.size.height).toInt()),
+                    style = TextStyle(fontSize = 15.sp)
                 )
 
+            val graphHeightStartPos = (canvasHeight - timeMeasuredText.size.height)
+            val graphWidthStartPos = (HrMeasuredText.size.height * 1f)
+            val graphWidthEndPos = (canvasWidth - HrMeasuredText.size.height)
 
-            val hrBox = HrMeasuredText.size.height
+            val graphWidthSize = graphWidthEndPos - graphWidthStartPos
 
-            rotate(degrees = -90F, pivot = Offset((canvasWidth * graphWidthStart.value) - hrBox , canvasHeight * graphHeightStart.value)) {
-                drawRect(color = Color.Transparent, size = HrMeasuredText.size.toSize(), topLeft = Offset((canvasWidth * graphWidthStart.value) - hrBox , canvasHeight * graphHeightStart.value))
-                drawText(HrMeasuredText, topLeft = Offset((canvasWidth * graphWidthStart.value) - hrBox , canvasHeight * graphHeightStart.value))
+            val graph0PosOffset = Offset(graphWidthStartPos,graphHeightStartPos)
+
+            var textWidth = graphWidthStartPos + (graphWidthSize / 5)
+
+
+
+            val timeTextOffset = Offset(0f, canvasHeight - timeMeasuredText.size.height)
+//            drawRect(color = Color.Transparent, size = timeMeasuredText.size.toSize(), topLeft = timeTextOffset)
+            drawText(timeMeasuredText, topLeft = timeTextOffset)
+
+
+            for (i in 1..5) {
+                val TimeIncrementMeasuredText =
+                textMeasurer.measure(
+                    AnnotatedString("${timeSecText.intValue / 60}m"
+                    ),
+                    style = TextStyle(fontSize = 15.sp)
+                )
+
+                drawText(TimeIncrementMeasuredText, topLeft = Offset(textWidth - (TimeIncrementMeasuredText.size.width/2), graphHeightStartPos-timeMeasuredText.size.height))
+                textWidth = textWidth + (graphWidthSize / 5)
+                timeSecText.intValue = timeSecText.intValue + 120
+            }
+
+            rotate(degrees = -90F, pivot = Offset(0f, canvasHeight - timeMeasuredText.size.height)) {
+//                drawRect(color = Color.Transparent, size = HrMeasuredText.size.toSize(), topLeft = Offset(0f, canvasHeight - timeMeasuredText.size.height))
+                drawText(HrMeasuredText, topLeft = Offset(0f, canvasHeight - timeMeasuredText.size.height))
             }
 
             scale(scaleX = 1f, scaleY= -1f){
@@ -208,27 +224,27 @@ class MainActivity : ComponentActivity() {
             for ( i in 1..5) {
                 drawLine(
                     brush = SolidColor(Color(0xFFB9B9B9)),
-                    start = Offset(canvasWidth * graphWidthStart.value, canvasHeight * lineHeight),
-                    end = Offset(canvasWidth * graphHeightStart.value,canvasHeight * lineHeight),
+                    start = Offset(graphWidthStartPos, canvasHeight * lineHeight),
+                    end = Offset(graphWidthEndPos,canvasHeight * lineHeight),
                     strokeWidth = 5f,
                 )
-                drawText(textMeasurer, "$timeText", topLeft = Offset(canvasWidth * graphWidthStart.value, canvasHeight * lineHeight))
+                drawText(textMeasurer, "$timeText", topLeft = Offset(graphWidthStartPos + 5, canvasHeight * lineHeight))
                 lineHeight = lineHeight + (graphHeight.value / 5)
                 timeText = timeText - 40
             }
 
 
             drawLine(
-                brush = SolidColor(Color(0xFF5B5B5B)),
-                start = Offset(canvasWidth * graphWidthStart.value,canvasHeight * graphHeightStart.value),
-                end = Offset(canvasWidth * graphWidthEnd,canvasHeight * graphHeightEnd),
+                brush = SolidColor(Color(0xFF000000)),
+                start = graph0PosOffset,
+                end = Offset(graphWidthStartPos,canvasHeight * graphHeightEnd),
                 strokeWidth = 10f,
             )
 
             drawLine(
                 brush = SolidColor(Color(0xFF000000)),
-                start = Offset(canvasWidth * graphWidthStart.value,canvasHeight * graphHeightStart.value),
-                end = Offset(canvasWidth * graphHeightStart.value,canvasHeight * graphHeightStart.value),
+                start = graph0PosOffset,
+                end = Offset(canvasWidth - HrMeasuredText.size.height ,graphHeightStartPos),
                 strokeWidth = 10f,
             )
         }
