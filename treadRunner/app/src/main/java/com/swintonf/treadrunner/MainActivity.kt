@@ -145,7 +145,7 @@ class MainActivity : ComponentActivity() {
             graphHeight.value = graphHeightStart.value - graphHeightEnd
             graphWidth.value = graphHeightStart.value - graphWidthEnd
 
-            var lineHeight = graphHeightEnd
+
 
 
             var timeText = 200
@@ -178,10 +178,14 @@ class MainActivity : ComponentActivity() {
                 )
 
             val graphHeightStartPos = (canvasHeight - timeMeasuredText.size.height)
+            val graphHeightEndPos = (canvasHeight - (canvasHeight * (1-graphHeightEnd)))
             val graphWidthStartPos = (HrMeasuredText.size.height * 1f)
             val graphWidthEndPos = (canvasWidth - HrMeasuredText.size.height)
 
+            val graphHeightSize = graphHeightStartPos - graphHeightEndPos
             val graphWidthSize = graphWidthEndPos - graphWidthStartPos
+
+            var lineHeight = graphHeightEndPos
 
             val graph0PosOffset = Offset(graphWidthStartPos,graphHeightStartPos)
 
@@ -224,12 +228,12 @@ class MainActivity : ComponentActivity() {
             for ( i in 1..5) {
                 drawLine(
                     brush = SolidColor(Color(0xFFB9B9B9)),
-                    start = Offset(graphWidthStartPos, canvasHeight * lineHeight),
-                    end = Offset(graphWidthEndPos,canvasHeight * lineHeight),
+                    start = Offset(graphWidthStartPos, lineHeight),
+                    end = Offset(graphWidthEndPos,lineHeight),
                     strokeWidth = 5f,
                 )
-                drawText(textMeasurer, "$timeText", topLeft = Offset(graphWidthStartPos + 5, canvasHeight * lineHeight))
-                lineHeight = lineHeight + (graphHeight.value / 5)
+                drawText(textMeasurer, "$timeText", topLeft = Offset(graphWidthStartPos + 5, lineHeight))
+                lineHeight = lineHeight + (graphHeightSize / 5)
                 timeText = timeText - 40
             }
 
