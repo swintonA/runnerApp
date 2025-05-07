@@ -33,15 +33,12 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.ParagraphStyle
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toSize
 import com.polar.androidcommunications.api.ble.model.DisInfo
 import com.polar.sdk.api.PolarBleApi
 import com.polar.sdk.api.PolarBleApiCallback
@@ -148,7 +145,7 @@ class MainActivity : ComponentActivity() {
 
 
 
-            var timeText = 200
+            var hrGraphText = 200
             val timeSecText = mutableIntStateOf(120)
 
             screenWidth.value = canvasWidth * 1f
@@ -232,9 +229,9 @@ class MainActivity : ComponentActivity() {
                     end = Offset(graphWidthEndPos,lineHeight),
                     strokeWidth = 5f,
                 )
-                drawText(textMeasurer, "$timeText", topLeft = Offset(graphWidthStartPos + 5, lineHeight))
+                drawText(textMeasurer, "$hrGraphText", topLeft = Offset(graphWidthStartPos + 5, lineHeight))
                 lineHeight = lineHeight + (graphHeightSize / 5)
-                timeText = timeText - 40
+                hrGraphText = hrGraphText - 40
             }
 
 
