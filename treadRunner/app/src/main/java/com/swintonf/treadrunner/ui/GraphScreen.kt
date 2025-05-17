@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -43,6 +45,8 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat.requestPermissions
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.polar.androidcommunications.api.ble.model.DisInfo
 import com.polar.sdk.api.PolarBleApi
@@ -52,12 +56,12 @@ import com.polar.sdk.api.model.PolarDeviceInfo
 import com.polar.sdk.api.model.PolarHealthThermometerData
 import com.polar.sdk.api.model.PolarHrBroadcastData
 import com.polar.sdk.impl.BDBleApiImpl
-import java.security.BasicPermission
 import kotlin.properties.Delegates
 
 @Composable
 fun GraphScreen(graphViewModel: GraphViewModel = viewModel(), context: Context)
 {
+
     val graphUiState by graphViewModel.uiState.collectAsState()
     DrawCanvas(graphUiState,context)
     ButtonLayout(context, graphUiState)
@@ -214,37 +218,49 @@ fun DrawCanvas(
 
 fun PolarConnect(context: Context, graphUiState : GraphUiState){
 
+    requestPermissions(context as Activity, arrayOf(Manifest.permission.BLUETOOTH_SCAN,
+        Manifest.permission.BLUETOOTH_CONNECT), 1)
+
+
+    var hasPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) + ContextCompat.checkSelfPermission(context,
+        Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+
+
     val context = context
     var DeviceId = "deviceId"
 
+    if (hasPermission) {
 
-    val api by lazy {
-        PolarBleApiDefaultImpl.defaultImplementation(
-            context,
-            setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)
-        )
+        val api by lazy {
+            PolarBleApiDefaultImpl.defaultImplementation(
+                context,
+                setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)
+            )
+        }
+
+        api.autoConnectToDevice(-50, null, null).subscribe()
+
+        api.setApiCallback(object : PolarBleApiCallback() {
+            override fun deviceConnected(polarDeviceInfo: PolarDeviceInfo) {
+                DeviceId = polarDeviceInfo.deviceId
+            }
+
+            override fun disInformationReceived(
+                identifier: String,
+                disInfo: DisInfo
+            ) {
+            }
+
+            override fun htsNotificationReceived(
+                identifier: String,
+                data: PolarHealthThermometerData
+            ) {
+            }
+        })
+        startHrStream(api, DeviceId, graphUiState)
+        hasPermission = false
     }
 
-    api.autoConnectToDevice(-50, null, null).subscribe()
-
-    api.setApiCallback(object : PolarBleApiCallback() {
-        override fun deviceConnected(polarDeviceInfo: PolarDeviceInfo) {
-            DeviceId = polarDeviceInfo.deviceId
-        }
-
-        override fun disInformationReceived(
-            identifier: String,
-            disInfo: DisInfo
-        ) {
-        }
-
-        override fun htsNotificationReceived(
-            identifier: String,
-            data: PolarHealthThermometerData
-        ) {
-        }
-    })
-    startHrStream(api, DeviceId, graphUiState)
 }
 
 var HeartR = mutableStateOf(0)
@@ -289,10 +305,7 @@ fun startHrStream(api: BDBleApiImpl, deviceID : String, graphUiState : GraphUiSt
         heartr = polarBroadcastData.hr
     }
     isStreaming.value = true
-
 }
-
-
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
@@ -305,8 +318,10 @@ fun ButtonLayout(context: Context, graphUiState : GraphUiState) {
     ) {
         val heartR by rememberSaveable { HeartR }
         Text("$heartR")
-        PermissionsButton { PolarConnect(context, graphUiState) }
-        StopButton {}
+        PermissionsButton {
+            PolarConnect(context, graphUiState) }
+        StopButton {
+        }
     }
 }
 
