@@ -1,6 +1,9 @@
 package com.swintonf.treadrunner.ui
 
+import android.Manifest
+import android.app.Activity
 import android.content.Context
+import android.content.pm.PackageManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,8 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowDpSize
 import androidx.compose.runtime.Composable
@@ -47,15 +52,18 @@ import com.polar.sdk.api.model.PolarDeviceInfo
 import com.polar.sdk.api.model.PolarHealthThermometerData
 import com.polar.sdk.api.model.PolarHrBroadcastData
 import com.polar.sdk.impl.BDBleApiImpl
+import java.security.BasicPermission
 import kotlin.properties.Delegates
 
 @Composable
 fun GraphScreen(graphViewModel: GraphViewModel = viewModel(), context: Context)
 {
     val graphUiState by graphViewModel.uiState.collectAsState()
-    DrawCanvas(graphUiState.graphPoints)
-    ButtonLayout(context, graphUiState.graphPoints)
+    DrawCanvas(graphUiState,context)
+    ButtonLayout(context, graphUiState)
+
 }
+
 
 var graphHeightStartPos by mutableStateOf(0f)
 var graphWidthStartPos by mutableStateOf(0f)
@@ -66,10 +74,15 @@ var graphWidthSize by mutableStateOf(0f)
 var graphHeightStep by mutableStateOf(0f)
 var graphWidthStep by mutableStateOf(0f)
 
+var screenRotation by mutableStateOf(0)
+
 @Composable
 fun DrawCanvas(
-    graphPoints : MutableList<Offset>
+    graphUiState : GraphUiState,
+    context: Context
 ) {
+    screenRotation = context.display.rotation
+
     val textMeasurer = rememberTextMeasurer()
 
     var graphHeightStart by remember {mutableStateOf(0f)}
@@ -151,14 +164,24 @@ fun DrawCanvas(
             drawText(HrMeasuredText, topLeft = Offset(0f, canvasHeight - timeMeasuredText.size.height))
         }
 
-
-        drawPoints(
-            pointMode = PointMode.Polygon,
-            color = Color(0xFF7E0D3B),
-            strokeWidth = 10f,
-            cap = StrokeCap.Round,
-            points = graphPoints
-        )
+        if (screenRotation == 0) {
+            drawPoints(
+                pointMode = PointMode.Polygon,
+                color = Color(0xFF7E0D3B),
+                strokeWidth = 10f,
+                cap = StrokeCap.Round,
+                points = graphUiState.portraitGraphPoints
+            )
+        } else {
+            println("landscapeGraph")
+            drawPoints(
+                pointMode = PointMode.Polygon,
+                color = Color(0xFF7E0D3B),
+                strokeWidth = 10f,
+                cap = StrokeCap.Round,
+                points = graphUiState.landscapeGraphPoints
+            )
+        }
 
         for ( i in 1..5) {
             drawLine(
@@ -171,7 +194,6 @@ fun DrawCanvas(
             lineHeight = lineHeight + (graphHeightSize / 5)
             hrGraphText = hrGraphText - 40
         }
-
 
         drawLine(
             brush = SolidColor(Color(0xFF000000)),
@@ -189,12 +211,19 @@ fun DrawCanvas(
     }
 }
 
-fun PolarConnect(context: Context, graphPoints: MutableList<Offset>){
+
+fun PolarConnect(context: Context, graphUiState : GraphUiState){
+
     val context = context
     var DeviceId = "deviceId"
 
-    val api by lazy { PolarBleApiDefaultImpl.defaultImplementation(context,
-        setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR))}
+
+    val api by lazy {
+        PolarBleApiDefaultImpl.defaultImplementation(
+            context,
+            setOf(PolarBleApi.PolarBleSdkFeature.FEATURE_HR)
+        )
+    }
 
     api.autoConnectToDevice(-50, null, null).subscribe()
 
@@ -214,31 +243,52 @@ fun PolarConnect(context: Context, graphPoints: MutableList<Offset>){
             data: PolarHealthThermometerData
         ) {
         }
-
     })
-
-    startHrStream(api, DeviceId, graphPoints)
-
+    startHrStream(api, DeviceId, graphUiState)
 }
 
 var HeartR = mutableStateOf(0)
+var isStreaming = mutableStateOf(false)
 
+fun startHrStream(api: BDBleApiImpl, deviceID : String, graphUiState : GraphUiState) {
+    val graphPoints = graphUiState.GraphPoints
+    val portraitGraphPoints = graphUiState.portraitGraphPoints
+    val landscapeGraphPoints = graphUiState.landscapeGraphPoints
+    var orientatedGraphPoints: MutableList<Offset>
 
-fun startHrStream(api: BDBleApiImpl, deviceID : String, graphPoints: MutableList<Offset>) {
-    var widthStep = graphWidthStartPos
+    portraitGraphPoints.removeAt(0)
+    landscapeGraphPoints.removeAt(0)
     graphPoints.removeAt(0)
 
+    var index = 0f
     var heartr : Int by Delegates.observable(0) { prop, old, new ->
         HeartR.value = new
-        graphPoints.add(Offset(widthStep,graphHeightStartPos - (new * graphHeightStep)))
-        widthStep=widthStep+(graphWidthStep)
+
+        if (screenRotation == 0) {
+            orientatedGraphPoints = portraitGraphPoints
+        }
+        else {
+            orientatedGraphPoints = landscapeGraphPoints
+        }
+
+
+        if (graphPoints.size > orientatedGraphPoints.size){
+            orientatedGraphPoints.clear()
+            index = 0f
+            graphPoints.forEach {
+                orientatedGraphPoints.add(Offset(graphWidthStartPos + (index * graphWidthStep), graphHeightStartPos - (it.y * graphHeightStep)) )
+                index++
+            }
+        }
+        graphPoints.add(Offset(0f, new * 1f))
     }
+
     api.startHrStreaming(deviceID)
     api.startListenForPolarHrBroadcasts(null).subscribe{
             polarBroadcastData: PolarHrBroadcastData ->
         heartr = polarBroadcastData.hr
     }
-
+    isStreaming.value = true
 
 }
 
@@ -246,7 +296,7 @@ fun startHrStream(api: BDBleApiImpl, deviceID : String, graphPoints: MutableList
 
 @OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
-fun ButtonLayout(context: Context, graphPoints: MutableList<Offset>) {
+fun ButtonLayout(context: Context, graphUiState : GraphUiState) {
     val windowHeight = currentWindowDpSize().height
 
     Column(Modifier.height(height = windowHeight / 3).fillMaxWidth(),
@@ -255,7 +305,8 @@ fun ButtonLayout(context: Context, graphPoints: MutableList<Offset>) {
     ) {
         val heartR by rememberSaveable { HeartR }
         Text("$heartR")
-        PermissionsButton { PolarConnect(context, graphPoints) }
+        PermissionsButton { PolarConnect(context, graphUiState) }
+        StopButton {}
     }
 }
 
@@ -264,4 +315,47 @@ fun PermissionsButton(onClick: () -> Unit) {
     Button(onClick = {onClick()}) {
         Text("Start")
     }
+}
+
+@Composable
+fun StopButton(onClick: () -> Unit) {
+    Button(onClick = {onClick()}) {
+        Text("Stop")
+    }
+}
+
+@Composable
+fun AlertDialogExample(
+    onDismissRequest: () -> Unit,
+    onConfirmation: () -> Unit,
+) {
+    AlertDialog(
+        title = {
+            Text("a")
+        },
+        text = {
+            Text("b")
+        },
+        onDismissRequest = {
+            onDismissRequest()
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirmation()
+                }
+            ) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = {
+                    onDismissRequest()
+                }
+            ) {
+                Text("Dismiss")
+            }
+        }
+    )
 }
