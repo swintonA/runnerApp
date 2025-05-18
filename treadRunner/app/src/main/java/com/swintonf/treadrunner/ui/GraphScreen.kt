@@ -227,7 +227,7 @@ fun PolarConnect(context: Context, graphUiState : GraphUiState){
 
 
     val context = context
-    var DeviceId = "deviceId"
+    var DeviceId = "none"
 
     if (hasPermission) {
 
@@ -257,8 +257,13 @@ fun PolarConnect(context: Context, graphUiState : GraphUiState){
             ) {
             }
         })
-        startHrStream(api, DeviceId, graphUiState)
-        hasPermission = false
+        if (DeviceId != "none") {
+            startHrStream(api, DeviceId, graphUiState)
+            hasPermission = false
+        }
+        else{
+            println("Device not connected")
+        }
     }
 
 }
