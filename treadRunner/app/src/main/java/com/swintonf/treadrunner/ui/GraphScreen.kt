@@ -147,7 +147,7 @@ fun DrawCanvas(
         graphWidthStep = graphWidthSize / 600
 
 
-        for (i in 1..5) {
+        repeat(5) {
             val timeIncrementMeasuredText =
                 textMeasurer.measure(
                     AnnotatedString("${timeSecText.intValue / 60}m"
@@ -183,7 +183,7 @@ fun DrawCanvas(
             )
         }
 
-        for ( i in 1..5) {
+        repeat(5) {
             drawLine(
                 brush = SolidColor(Color(0xFFB9B9B9)),
                 start = Offset(graphWidthStartPos, lineHeight),
