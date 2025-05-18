@@ -4,8 +4,6 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,10 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowDpSize
 import androidx.compose.runtime.Composable
@@ -152,14 +148,14 @@ fun DrawCanvas(
 
 
         for (i in 1..5) {
-            val TimeIncrementMeasuredText =
+            val timeIncrementMeasuredText =
                 textMeasurer.measure(
                     AnnotatedString("${timeSecText.intValue / 60}m"
                     ),
                     style = TextStyle(fontSize = 15.sp)
                 )
 
-            drawText(TimeIncrementMeasuredText, topLeft = Offset(textWidth - (TimeIncrementMeasuredText.size.width/2), graphHeightStartPos-timeMeasuredText.size.height))
+            drawText(timeIncrementMeasuredText, topLeft = Offset(textWidth - (timeIncrementMeasuredText.size.width/2), graphHeightStartPos-timeMeasuredText.size.height))
             textWidth = textWidth + (graphWidthSize / 5)
             timeSecText.intValue = timeSecText.intValue + 120
         }
@@ -216,7 +212,7 @@ fun DrawCanvas(
 }
 
 
-fun PolarConnect(context: Context, graphUiState : GraphUiState){
+fun polarConnect(context: Context, graphUiState : GraphUiState){
 
     requestPermissions(context as Activity, arrayOf(Manifest.permission.BLUETOOTH_SCAN,
         Manifest.permission.BLUETOOTH_CONNECT), 1)
@@ -324,7 +320,7 @@ fun ButtonLayout(context: Context, graphUiState : GraphUiState) {
         val heartR by rememberSaveable { HeartR }
         Text("$heartR")
         PermissionsButton {
-            PolarConnect(context, graphUiState) }
+            polarConnect(context, graphUiState) }
         StopButton {
         }
     }
